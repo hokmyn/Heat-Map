@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="application-name" content="Heat Map" />
+    <meta name="author" content="Denis Kalinin" />
+    <title>Heat Map</title>
+    <!-- stylesheets -->
+    <link rel="stylesheet" href="css/main.css">        
+  </head>
+
+<body>
+    <div id='map'>
+      <h1>Monthly Global Land-Surface Temperature</h1>
+      <h3>1753 - 2015</h3>
+      <p>Temperatures are in Celsius and reported as anomalies relative to the Jan 1951 - Dec 1980 average.</p>
+      <p>Estimated Jan 1951 - Dec 1980 absolute temperature ℃: 8.66 +/- 0.07</p>
+     </div>
+    <!-- Javascript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.9.1/d3.min.js"></script>
+    <script>
+      const url = 'https://raw.githubusercontent.com/FreeCodeCamp/ProjectReferenceData/master/global-temperature.json';
+const draw = () => 
+  mapData => {
+    let monthlyVariance = mapData.monthlyVariance,
+        baseTemperature = mapData.baseTemperature,
+        monthsArr = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+        margin = {top: 10, left: 40, bottom: 30, right: 5},
+        width = 1100 - margin.left - margin.right,
+        height = 576 - margin.top - margin.bottom,
+        yearsArr = d3.extent(monthlyVariance, d => {return d.year}),
+        barWidth = width / (yearsArr[1] - yearsArr[0]),
+        barHeight = height/12,
+        svg = d3.select('#map').append('svg')
+                .attr('width', width + margin.left + margin.right)
+                .attr('height', height + margin.top + margin.bottom + 20)
+                .style("padding", "10px")
+                .append('g')
+                .attr("transform", "translate(" + margin.left + "," + margin.top +  ")"),
+    
+        years = d3.scaleLinear().range([0, width])
+                            .domain(d3.extent(monthlyVariance, d => {
+                              return d.year;
+                            })),
+        months = d3.scaleLinear()
+                    .rangeRound([height-height/13,0])
+                    .domain(d3.extent(monthlyVariance, d => {
+                              return d.month;
+                            })),
+        tooltip = d3.select('#map')
+                    .append('div')
+                      .classed('tooltip', true)
+                      .style('opacity', 0);
+      svg.selectAll('rect')
+          .data(monthlyVariance)
+          .enter()
+          .append('rect')
+            .attr("width", barWidth)
+            .attr("height", Math.round(height/11.8))
+            .attr("x", function(d) { return years(d.year); })
+            .attr("y", function(d) { return months(d.month); })
+            .attr("class", "barUnit")
+            .attr('fill', function(d) {
+              if(d.variance <= -5.96) {
+                return "#5e4fa2";
+              } else if(d.variance > -5.96 && d.variance <= -4.76) {
+                return "#3288bd";
+              } else if(d.variance > -4.76 && d.variance <= -3.66) {
+                return "#66c2a5";
+              } else if(d.variance > -3.66 && d.variance <= -2.56) {
+                return "#abdda4";
+              } else if(d.variance > -2.56 && d.variance <= -1.46) {
+                return "#e6f598";
+              } else if(d.variance > -1.46 && d.variance <= -0.06) {
+                return "#ffffbf";
+              } else if(d.variance > -0.06 && d.variance <= 0.74) {
+                return "#fee08b";
+              } else if(d.variance > 0.74 && d.variance <= 1.84) {
+                return "#fdae61";
+              } else if(d.variance > 1.84 && d.variance <= 2.94) {
+                return "#f46d43";
+              } else if(d.variance > 2.94 && d.variance <= 4.04) {
+                return "#d53e4f";
+              } else {
+                return "#9e0142";
+              }
+            })
+          .on('mouseover', function(d, i) {
+              tooltip.transition()
+                .duration(300)
+                .style('opacity', 0.6);
+              tooltip.html(`${d.year} - ${monthsArr[d.month - 1]} <br> Temperature: ${(baseTemperature + d.variance).toFixed(2)} <br> Variance: ${d.variance}`)
+                .style('left', (d3.event.pageX + 30) + 'px')
+                .style('top', (d3.event.pageY - 30) + 'px');
+            })
+            .on('mouseout', function(d) {
+              tooltip.transition()
+                .duration(300)
+                .style('opacity', 0);
+            });
+      let xAxis = d3.axisBottom(years).tickFormat(d3.format("")),
+          yAxis = d3.axisLeft(months).ticks(12);
+          
+            svg.append('g')
+            .attr('class', 'x-axis')
+            .attr('transform', function() {
+              return 'translate(' + 0 + ',' + height + ')' 
+            })
+            .call(xAxis);
+    
+            svg.append('g')
+                .attr('class', 'y-axis')
+                .attr("transform", "translate(0,"+(height/20)+")")
+                .call(yAxis);
+            //X Axis Title
+            svg.append("text")
+              .attr('x',width/2)
+              .attr('y',height + margin.top + margin.bottom)
+              .style('text-anchor','middle')
+              .text("Years");
+            //Y axis title
+            svg.append("text")
+              .attr("transform", "rotate(-90)")
+              .attr("y", 0 - margin.left - 20)
+              .attr("x",0 - (height / 2))
+              .attr("dy", "2em")
+              .style("text-anchor", "middle")
+              .text("Months");
+  }
+d3.json(url, draw());
+    </script>
+</body>
+</html>
