@@ -1,1 +1,1 @@
-# Heat-Map
+# FreeCodeCamp's project Heat Map
